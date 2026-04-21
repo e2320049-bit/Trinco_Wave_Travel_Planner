@@ -4,135 +4,82 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 
 const app = express();
-const port = 3000;
+const PORT = 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 
-console.log('🌊 Trinco Wave Travel Planner Backend Server');
-console.log('=============================================\n');
+console.log('\n========================================');
+console.log('🌊 Trinco Wave Travel Planner Backend');
+console.log('========================================\n');
 
-// Database connection
+// MySQL Database Connection
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'travel_planner',
-    multipleStatements: true
+    host: 'localhost',      // Your MySQL host
+    user: 'root',           // Your MySQL username
+    password: '',           // Your MySQL password (empty for XAMPP)
+    database: 'travel_planner',  // Your database name
+    port: 3306              // MySQL default port
 });
 
+// Test database connection
 db.connect((err) => {
     if (err) {
-        console.error('❌ Database connection failed:', err.message);
-        console.log('\n📌 Setup Instructions:');
-        console.log('1. Start XAMPP/WAMP (MySQL service)');
-        console.log('2. Open phpMyAdmin');
-        console.log('3. Create database: travel_planner');
-        console.log('4. Import the setup.sql file');
-        return;
+        console.error('❌ DATABASE CONNECTION FAILED!');
+        console.error('Error:', err.message);
+        console.log('\n🔧 FIX THESE ISSUES:');
+        console.log('1. Open XAMPP Control Panel');
+        console.log('2. Click "Start" button next to MySQL');
+        console.log('3. Wait for green "Running" status');
+        console.log('4. Open http://localhost/phpmyadmin');
+        console.log('5. Verify database "travel_planner" exists\n');
+        process.exit(1);
     }
-    console.log('✅ MySQL connected successfully');
-    console.log('📊 Database: travel_planner\n');
+    console.log('✅ Connected to MySQL Database!');
+    console.log('📊 Database: travel_planner');
+    console.log('🔗 phpMyAdmin: http://localhost/phpmyadmin');
+    console.log('💾 Data will be stored in your database\n');
 });
 
-// ============ PLACES API ============
+// ============ API ENDPOINTS ============
 
-// Get all places
+// Test endpoint
+app.get('/api/test', (req, res) => {
+    res.json({ 
+        success: true, 
+        message: 'Backend is running!',
+        database: 'Connected to travel_planner',
+        phpMyAdmin: 'http://localhost/phpmyadmin'
+    });
+});
+
+// Get all places from database
 app.get('/api/places', (req, res) => {
-    const { category } = req.query;
-    let query = 'SELECT * FROM places';
-    let params = [];
+    const query = 'SELECT * FROM places ORDER BY distance';
     
-    if (category && category !== 'all') {
-        query += ' WHERE category = ?';
-        params.push(category);
-    }
-    
-    query += ' ORDER BY distance';
-    
-    db.query(query, params, (err, results) => {
+    db.query(query, (err, results) => {
         if (err) {
-            console.error(err);
+            console.error('Error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
+        console.log(`📦 Sent ${results.length} places to frontend`);
         res.json(results);
     });
 });
 
-// Get single place
-app.get('/api/places/:id', (req, res) => {
-    db.query('SELECT * FROM places WHERE id = ?', [req.params.id], (err, results) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-        if (results.length === 0) return res.status(404).json({ error: 'Place not found' });
-        res.json(results[0]);
-    });
-});
-
-// Add new place (Admin)
-app.post('/api/places', (req, res) => {
-    const { name, category, distance, description, opening_hours, entry_fee, travel_tips, latitude, longitude } = req.body;
-    
-    if (!name || !category || !distance) {
-        return res.status(400).json({ error: 'Name, category, and distance are required' });
-    }
-    
-    db.query(
-        'INSERT INTO places (name, category, distance, description, opening_hours, entry_fee, travel_tips, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [name, category, distance, description, opening_hours, entry_fee, travel_tips, latitude, longitude],
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            res.json({ message: 'Place added successfully', id: result.insertId });
-        }
-    );
-});
-
-// Update place (Admin)
-app.put('/api/places/:id', (req, res) => {
-    const { name, category, distance, description, opening_hours, entry_fee, travel_tips } = req.body;
-    
-    db.query(
-        'UPDATE places SET name = ?, category = ?, distance = ?, description = ?, opening_hours = ?, entry_fee = ?, travel_tips = ? WHERE id = ?',
-        [name, category, distance, description, opening_hours, entry_fee, travel_tips, req.params.id],
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            if (result.affectedRows === 0) return res.status(404).json({ error: 'Place not found' });
-            res.json({ message: 'Place updated successfully' });
-        }
-    );
-});
-
-// Delete place (Admin)
-app.delete('/api/places/:id', (req, res) => {
-    db.query('DELETE FROM user_plans WHERE place_id = ?', [req.params.id], (err) => {
-        if (err) console.error(err);
-        
-        db.query('DELETE FROM places WHERE id = ?', [req.params.id], (err, result) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            if (result.affectedRows === 0) return res.status(404).json({ error: 'Place not found' });
-            res.json({ message: 'Place deleted successfully' });
-        });
-    });
-});
-
-// ============ USER AUTHENTICATION API ============
-
-// Register
+// Register new user
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     
+    console.log(`📝 Registration attempt: ${username}`);
+    
     if (!username || !password) {
         return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    if (username.length < 3) {
+        return res.status(400).json({ error: 'Username must be at least 3 characters' });
     }
     
     if (password.length < 4) {
@@ -143,47 +90,66 @@ app.post('/api/register', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         
         db.query(
-            'INSERT INTO users (username, password) VALUES (?, ?)',
+            'INSERT INTO users (username, password, is_admin) VALUES (?, ?, 0)',
             [username, hashedPassword],
             (err, result) => {
                 if (err) {
                     if (err.code === 'ER_DUP_ENTRY') {
                         return res.status(400).json({ error: 'Username already exists' });
                     }
+                    console.error('Database error:', err);
                     return res.status(500).json({ error: 'Database error' });
                 }
-                res.json({ message: 'Registration successful', userId: result.insertId });
+                
+                console.log(`✅ User registered: ${username} (ID: ${result.insertId})`);
+                console.log(`📊 Check in phpMyAdmin: http://localhost/phpmyadmin?db=travel_planner&table=users`);
+                
+                res.json({ 
+                    success: true, 
+                    message: 'Registration successful! Please login.',
+                    userId: result.insertId
+                });
             }
         );
     } catch (error) {
+        console.error('Server error:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
 
-// Login
+// Login user
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
+    
+    console.log(`🔐 Login attempt: ${username}`);
     
     db.query(
         'SELECT * FROM users WHERE username = ?',
         [username],
         async (err, results) => {
-            if (err) return res.status(500).json({ error: 'Database error' });
+            if (err) {
+                return res.status(500).json({ error: 'Database error' });
+            }
             
             if (results.length === 0) {
-                return res.status(401).json({ error: 'Invalid credentials' });
+                console.log(`❌ Login failed: ${username} - User not found`);
+                return res.status(401).json({ error: 'Invalid username or password' });
             }
             
             const user = results[0];
             const match = await bcrypt.compare(password, user.password);
             
             if (!match) {
-                return res.status(401).json({ error: 'Invalid credentials' });
+                console.log(`❌ Login failed: ${username} - Wrong password`);
+                return res.status(401).json({ error: 'Invalid username or password' });
             }
             
+            console.log(`✅ User logged in: ${username} (Admin: ${user.is_admin === 1})`);
+            
             res.json({ 
-                message: 'Login successful', 
-                userId: user.id, 
+                success: true,
+                message: 'Login successful',
+                userId: user.id,
                 username: user.username,
                 isAdmin: user.is_admin === 1
             });
@@ -191,42 +157,47 @@ app.post('/api/login', (req, res) => {
     );
 });
 
-// ============ USER PLAN API ============
+// Add place to user's plan
+app.post('/api/plan/add', (req, res) => {
+    const { userId, placeId } = req.body;
+    
+    console.log(`📝 Adding place ${placeId} to user ${userId}'s plan`);
+    
+    db.query(
+        'INSERT INTO user_plans (user_id, place_id) VALUES (?, ?)',
+        [userId, placeId],
+        (err) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') {
+                    return res.status(400).json({ error: 'Place already in your plan' });
+                }
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            console.log(`✅ Added to plan`);
+            res.json({ success: true, message: 'Added to your plan' });
+        }
+    );
+});
 
 // Get user's plan
 app.get('/api/plan/:userId', (req, res) => {
     const { userId } = req.params;
     
-    db.query(
-        `SELECT p.* FROM places p 
-         INNER JOIN user_plans up ON p.id = up.place_id 
-         WHERE up.user_id = ? 
-         ORDER BY up.added_at`,
-        [userId],
-        (err, results) => {
-            if (err) return res.status(500).json({ error: 'Database error' });
-            res.json(results);
-        }
-    );
-});
-
-// Add to plan
-app.post('/api/plan/add', (req, res) => {
-    const { userId, placeId } = req.body;
+    const query = `
+        SELECT p.*, up.added_at 
+        FROM places p 
+        INNER JOIN user_plans up ON p.id = up.place_id 
+        WHERE up.user_id = ? 
+        ORDER BY up.added_at ASC
+    `;
     
-    db.query(
-        'INSERT INTO user_plans (user_id, place_id) VALUES (?, ?)',
-        [userId, placeId],
-        (err, result) => {
-            if (err) {
-                if (err.code === 'ER_DUP_ENTRY') {
-                    return res.status(400).json({ error: 'Place already in plan' });
-                }
-                return res.status(500).json({ error: 'Database error' });
-            }
-            res.json({ message: 'Added to plan' });
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
         }
-    );
+        res.json(results);
+    });
 });
 
 // Remove from plan
@@ -236,41 +207,33 @@ app.delete('/api/plan/remove', (req, res) => {
     db.query(
         'DELETE FROM user_plans WHERE user_id = ? AND place_id = ?',
         [userId, placeId],
-        (err, result) => {
-            if (err) return res.status(500).json({ error: 'Database error' });
-            res.json({ message: 'Removed from plan' });
+        (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Database error' });
+            }
+            res.json({ success: true, message: 'Removed from plan' });
         }
     );
 });
 
 // Clear plan
 app.delete('/api/plan/clear/:userId', (req, res) => {
-    const { userId } = req.params;
-    
-    db.query(
-        'DELETE FROM user_plans WHERE user_id = ?',
-        [userId],
-        (err, result) => {
-            if (err) return res.status(500).json({ error: 'Database error' });
-            res.json({ message: 'Plan cleared' });
+    db.query('DELETE FROM user_plans WHERE user_id = ?', [req.params.userId], (err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
         }
-    );
+        res.json({ success: true, message: 'Plan cleared' });
+    });
 });
 
 // Start server
-app.listen(port, () => {
-    console.log(`🚀 Server running on http://localhost:${port}`);
-    console.log(`📡 API Endpoints:`);
-    console.log(`   GET    /api/places`);
-    console.log(`   GET    /api/places/:id`);
-    console.log(`   POST   /api/places`);
-    console.log(`   PUT    /api/places/:id`);
-    console.log(`   DELETE /api/places/:id`);
-    console.log(`   POST   /api/register`);
-    console.log(`   POST   /api/login`);
-    console.log(`   GET    /api/plan/:userId`);
-    console.log(`   POST   /api/plan/add`);
-    console.log(`   DELETE /api/plan/remove`);
-    console.log(`   DELETE /api/plan/clear/:userId\n`);
+app.listen(PORT, () => {
+    console.log(`\n🚀 Backend server running on http://localhost:${PORT}`);
+    console.log(`\n📡 API Endpoints:`);
+    console.log(`   GET    http://localhost:${PORT}/api/test`);
+    console.log(`   GET    http://localhost:${PORT}/api/places`);
+    console.log(`   POST   http://localhost:${PORT}/api/register`);
+    console.log(`   POST   http://localhost:${PORT}/api/login`);
+    console.log(`\n💡 Frontend should connect to: http://localhost:${PORT}/api`);
+    console.log(`📊 View database at: http://localhost/phpmyadmin\n`);
 });
-
