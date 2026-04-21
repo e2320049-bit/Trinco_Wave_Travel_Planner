@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Connection</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { margin: 5px; padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🌊 Trinco Wave Travel Planner - Connection Test</h1>
+    
+    <div id="status" class="status"></div>
+    
+    <button onclick="testConnection()">1️⃣ Test Server Connection</button>
+    <button onclick="getPlaces()">2️⃣ Get All Places</button>
+    <button onclick="testRegister()">3️⃣ Test Registration</button>
+    <button onclick="testLogin()">4️⃣ Test Login</button>
+    <button onclick="getPlan()">5️⃣ Get User Plan</button>
+    
+    <h3>📋 Result:</h3>
+    <pre id="result">Click a button to test...</pre>
+
+    <script>
+        const API = 'http://localhost:3000/api';
+        let userId = null;
+        
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API}/test`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `✅ SUCCESS! Server is running\n\n${JSON.stringify(data, null, 2)}`;
+                document.getElementById('status').innerHTML = 
+                    '<div class="success">✅ Connected to backend server!</div>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    `❌ ERROR: ${error.message}\n\nMake sure to run: node server.js`;
+                document.getElementById('status').innerHTML = 
+                    '<div class="error">❌ Cannot connect to backend. Server not running?</div>';
+            }
+        }
+        
+        async function getPlaces() {
+            try {
+                const response = await fetch(`${API}/places`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `✅ Found ${data.length} places\n\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `❌ ERROR: ${error.message}`;
+            }
+        }
+        
+        async function testRegister() {
+            const username = 'user_' + Date.now();
+            try {
+                const response = await fetch(`${API}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: 'test123' })
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `✅ Registration attempt for: ${username}\n\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `❌ ERROR: ${error.message}`;
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'testuser', password: 'test123' })
+                });
+                const data = await response.json();
+                if (data.success && data.userId) {
+                    userId = data.userId;
+                    document.getElementById('result').innerHTML = 
+                        `✅ Login successful! User ID: ${userId}\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `❌ Login failed\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `❌ ERROR: ${error.message}`;
+            }
+        }
+        
+        async function getPlan() {
+            if (!userId) {
+                document.getElementById('result').innerHTML = 'Please login first (click button 4)';
+                return;
+            }
+            try {
+                const response = await fetch(`${API}/plan/${userId}`);
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    `✅ User ${userId} plan has ${data.length} places\n\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `❌ ERROR: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
