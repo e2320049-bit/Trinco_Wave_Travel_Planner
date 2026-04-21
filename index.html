@@ -799,16 +799,59 @@ function saveUsers() {
 
     // ==================== ADMIN FUNCTIONS ====================
     function checkAdminLogin() {
-        let pwd = prompt("🔐 Enter Admin Password:");
+    // Create modal with password input
+    const modalHtml = `
+        <div id="adminLoginModal" class="modal" style="display: block; z-index: 1001;">
+            <h3>🔐 Admin Login</h3>
+            <input type="password" id="adminPassword" placeholder="Enter Admin Password" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 25px; border: 1px solid #ddd;">
+            <button id="adminLoginBtn" style="margin: 5px; padding: 10px 20px; border-radius: 25px; border: none; background: #ffb347; cursor: pointer; font-weight: bold;">Login</button>
+            <button id="adminCancelBtn" style="margin: 5px; padding: 10px 20px; border-radius: 25px; border: none; background: #ccc; cursor: pointer;">Cancel</button>
+        </div>
+    `;
+    
+    const existingModal = document.getElementById("adminLoginModal");
+    if(existingModal) existingModal.remove();
+    
+    let overlay = document.getElementById("modalOverlay");
+    overlay.style.display = "block";
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    document.getElementById("adminLoginBtn").onclick = () => {
+        const pwd = document.getElementById("adminPassword").value;
         if(pwd === "admin123") {
             isAdmin = true;
             document.getElementById("adminPanel").style.display = "block";
             alert("✅ Admin mode enabled - You can now add/edit/delete places");
             showPlaces();
-        } else if(pwd !== null) {
+            closeAdminLoginModal();
+            overlay.style.display = "none";
+        } else if(pwd !== "") {
             alert("❌ Wrong password");
+            document.getElementById("adminPassword").value = "";
+            document.getElementById("adminPassword").focus();
         }
-    }
+    };
+    
+    document.getElementById("adminCancelBtn").onclick = () => {
+        closeAdminLoginModal();
+        overlay.style.display = "none";
+    };
+    
+    document.getElementById("adminPassword").onkeypress = (e) => {
+        if(e.key === "Enter") {
+            document.getElementById("adminLoginBtn").click();
+        }
+    };
+    
+    setTimeout(() => {
+        document.getElementById("adminPassword").focus();
+    }, 100);
+}
+
+function closeAdminLoginModal() {
+    const modal = document.getElementById("adminLoginModal");
+    if(modal) modal.remove();
+}
 
     function toggleAdminPanel() {
         document.getElementById("adminPanel").style.display = "none";
