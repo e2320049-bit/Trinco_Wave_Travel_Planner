@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Database Connection</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 900px; margin: 0 auto; }
+        .success { color: green; background: #d4edda; padding: 10px; border-radius: 5px; }
+        .error { color: red; background: #f8d7da; padding: 10px; border-radius: 5px; }
+        button { margin: 5px; padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .info { background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🌊 Trinco Wave Travel Planner</h1>
+    <h2>Database Connection Test</h2>
+    
+    <div class="info">
+        <strong>📊 Database Info:</strong><br>
+        phpMyAdmin: <a href="http://localhost/phpmyadmin?db=travel_planner" target="_blank">
+            http://localhost/phpmyadmin?db=travel_planner
+        </a><br>
+        Backend API: http://localhost:3000/api<br>
+        Database: travel_planner
+    </div>
+    
+    <div id="result"></div>
+    
+    <button onclick="testBackend()">1. Test Backend Connection</button>
+    <button onclick="getPlaces()">2. Get Places from Database</button>
+    <button onclick="testRegister()">3. Register New User</button>
+    <button onclick="testLogin()">4. Login</button>
+    <button onclick="viewDatabase()">5. Open phpMyAdmin</button>
+    
+    <h3>Response:</h3>
+    <pre id="output">Click a button to test...</pre>
+
+    <script>
+        const API = 'http://localhost:3000/api';
+        
+        function showOutput(data, isError = false) {
+            const output = document.getElementById('output');
+            if (isError) {
+                output.innerHTML = `❌ ERROR:\n${JSON.stringify(data, null, 2)}`;
+            } else {
+                output.innerHTML = `✅ SUCCESS:\n${JSON.stringify(data, null, 2)}`;
+            }
+        }
+        
+        async function testBackend() {
+            try {
+                const response = await fetch(`${API}/test`);
+                const data = await response.json();
+                showOutput(data);
+                document.getElementById('result').innerHTML = 
+                    '<div class="success">✅ Backend is running and connected to database!</div>';
+            } catch (error) {
+                showOutput({ error: error.message }, true);
+                document.getElementById('result').innerHTML = 
+                    '<div class="error">❌ Cannot connect to backend. Run: node server.js</div>';
+            }
+        }
+        
+        async function getPlaces() {
+            try {
+                const response = await fetch(`${API}/places`);
+                const data = await response.json();
+                showOutput({ count: data.length, places: data });
+                document.getElementById('result').innerHTML = 
+                    `<div class="success">✅ Retrieved ${data.length} places from database!</div>`;
+            } catch (error) {
+                showOutput({ error: error.message }, true);
+            }
+        }
+        
+        async function testRegister() {
+            const username = `user_${Date.now()}`;
+            try {
+                const response = await fetch(`${API}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, password: 'test123' })
+                });
+                const data = await response.json();
+                showOutput({ username: username, response: data });
+                if (data.success) {
+                    document.getElementById('result').innerHTML = 
+                        `<div class="success">✅ User "${username}" registered! Check phpMyAdmin to see the record.</div>`;
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">❌ Registration failed: ${data.error}</div>`;
+                }
+            } catch (error) {
+                showOutput({ error: error.message }, true);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'testuser', password: 'test123' })
+                });
+                const data = await response.json();
+                showOutput(data);
+                if (data.success) {
+                    document.getElementById('result').innerHTML = 
+                        '<div class="success">✅ Login successful!</div>';
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        '<div class="error">❌ Login failed. Try registering first.</div>';
+                }
+            } catch (error) {
+                showOutput({ error: error.message }, true);
+            }
+        }
+        
+        function viewDatabase() {
+            window.open('http://localhost/phpmyadmin?db=travel_planner', '_blank');
+        }
+        
+        // Auto test on load
+        window.onload = () => {
+            setTimeout(testBackend, 500);
+        };
+    </script>
+</body>
+</html>
