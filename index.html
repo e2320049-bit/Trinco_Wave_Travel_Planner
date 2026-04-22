@@ -815,29 +815,6 @@ function saveUsers() {
         isAdmin = false;
     }
 
-    function verifyAdmin() {
-    let pwdInput = document.getElementById("adminPass");
-    let pwd = pwdInput.value;
-
-    if (pwd === "admin123") {
-        isAdmin = true;
-
-        document.getElementById("adminPanel").style.display = "block";
-
-        // ✅ FORCE CLOSE MODAL (this is the key fix)
-        document.getElementById("adminModal").style.display = "none";
-        document.getElementById("modalOverlay").style.display = "none";
-
-        pwdInput.value = "";
-
-        showPlaces();
-
-    } else {
-        alert("❌ Wrong password");
-        pwdInput.value = "";
-    }
-}
-
     function addPlace() {
         if(!isAdmin) { alert("⚠️ Admin access required. Click 'Admin Login' first."); return; }
         
@@ -1107,11 +1084,10 @@ function saveUsers() {
         document.getElementById("modalOverlay").style.display = "block"; 
     }
     function closeModals() {
-    document.getElementById("loginModal").style.display = "none";
-    document.getElementById("registerModal").style.display = "none";
-    document.getElementById("adminModal").style.display = "none"; // ✅ ADD THIS
-    document.getElementById("modalOverlay").style.display = "none";
-}
+        document.getElementById("loginModal").style.display = "none";
+        document.getElementById("registerModal").style.display = "none";
+        document.getElementById("modalOverlay").style.display = "none";
+    }
 
     // Add Admin Login button
     function addAdminButton() {
