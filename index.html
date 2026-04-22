@@ -626,16 +626,7 @@
 </div>
 
 <script>
-    // ==================== COMPLETE PLACES DATABASE (10+ Attractions) ====================
-let users = JSON.parse(localStorage.getItem("travel_users")) || [];
-
-function saveUsers() {
-    localStorage.setItem("travel_users", JSON.stringify(users));
-}
-    
-
-   
-    
+     
     let placesData = [
         { id: 1, name: "Fort Frederick", category: "Heritage", distance: 2.0, 
           desc: "Historic fort built by the Portuguese in 1624, later expanded by the Dutch and British. Located near Swami Rock, this fort offers stunning views and rich colonial history.",
@@ -742,51 +733,45 @@ function saveUsers() {
     let user = document.getElementById("regUser").value.trim();
     let pass = document.getElementById("regPass").value.trim();
 
-    if (!user || !pass) {
-        alert("❌ Fill all fields");
-        return;
-    }
-
-    let exists = users.find(u => u.username === user);
-
-    if (exists) {
-        alert("❌ User already exists");
-        return;
-    }
-
-    users.push({
-        username: user,
-        password: pass,
-        plan: []
+    fetch("http://localhost:3000/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name: user,
+            email: user + "@gmail.com",
+            password: pass
+        })
+    })
+    .then(res => res.text())
+    .then(data => {
+        alert(data);
+        closeModals();
     });
-
-    saveUsers();
-
-    alert("✅ Registered successfully!");
-    closeModals();
 }
     function login() {
-    let user = document.getElementById("loginUser").value.trim();
-    let pass = document.getElementById("loginPass").value.trim();
+    let user = document.getElementById("loginUser").value;
+    let pass = document.getElementById("loginPass").value;
 
-    console.log("Users list:", users); // DEBUG CHECK
+    fetch("http://localhost:3000/users")
+    .then(res => res.json())
+    .then(data => {
 
-    let found = users.find(u => u.username === user && u.password === pass);
+        let found = data.find(u => u.name === user && u.password === pass);
 
-    if (!found) {
-        alert("❌ Invalid login");
-        return;
-    }
+        if (!found) {
+            alert("❌ Invalid login");
+            return;
+        }
 
-    currentUser = user;
-    localStorage.setItem("travel_currentUser", currentUser);
+        currentUser = user;
+        localStorage.setItem("travel_currentUser", currentUser);
 
-    updateAuthUI();
-    loadUserPlan();   // IMPORTANT
-    closeModals();
-    showPlaces();
-
-    alert("✅ Login successful!");
+        updateAuthUI();
+        closeModals();
+        alert("✅ Login successful!");
+    });
 }
     function logout() {
         currentUser = null;
