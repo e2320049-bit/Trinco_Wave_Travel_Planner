@@ -798,17 +798,26 @@ function saveUsers() {
     }
 
     // ==================== ADMIN FUNCTIONS ====================
-    function checkAdminLogin() {
-        let pwd = prompt("🔐 Enter Admin Password:");
-        if(pwd === "admin123") {
+    ffunction checkAdminLogin() {
+    let pwd = prompt("🔐 Enter Admin Password:");
+
+    fetch("http://localhost:3000/admin-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pwd })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
             isAdmin = true;
             document.getElementById("adminPanel").style.display = "block";
-            alert("✅ Admin mode enabled - You can now add/edit/delete places");
+            alert("✅ Admin mode enabled");
             showPlaces();
-        } else if(pwd !== null) {
+        } else {
             alert("❌ Wrong password");
         }
-    }
+    });
+}
 
     function toggleAdminPanel() {
         document.getElementById("adminPanel").style.display = "none";
