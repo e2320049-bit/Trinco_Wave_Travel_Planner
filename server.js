@@ -26,19 +26,16 @@ db.connect(err => {
 });
 
 // REGISTER USER
-app.post("/register", (req, res) => {
-    const { name, email, password } = req.body;
+app.post("/admin-login", (req, res) => {
+    const { password } = req.body;
 
-    const sql = "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
+    const ADMIN_PASSWORD = "admin123"; // keep ONLY in backend
 
-    db.query(sql, [name, email, password], (err, result) => {
-        if (err) {
-            console.log(err);
-            res.send("Registration failed");
-        } else {
-            res.send("User registered successfully");
-        }
-    });
+    if (password === ADMIN_PASSWORD) {
+        res.send({ success: true });
+    } else {
+        res.send({ success: false });
+    }
 });
 
 // GET ALL USERS (ADMIN VIEW)
