@@ -821,13 +821,20 @@ function saveUsers() {
 
     if (pwd === "admin123") {
         isAdmin = true;
+
         document.getElementById("adminPanel").style.display = "block";
-        pwdInput.value = ""; // ✅ clear input
-        closeModals();
+
+        // ✅ FORCE CLOSE MODAL (this is the key fix)
+        document.getElementById("adminModal").style.display = "none";
+        document.getElementById("modalOverlay").style.display = "none";
+
+        pwdInput.value = "";
+
         showPlaces();
+
     } else {
         alert("❌ Wrong password");
-        pwdInput.value = ""; // optional
+        pwdInput.value = "";
     }
 }
 
