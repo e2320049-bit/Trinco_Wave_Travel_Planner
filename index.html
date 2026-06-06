@@ -624,6 +624,12 @@
     <button onclick="register()">Register</button>
     <button onclick="closeModals()">Cancel</button>
 </div>
+<div id="adminModal" class="modal">
+    <h3>👑 Admin Login</h3>
+    <input type="password" id="adminPass" placeholder="Enter Admin Password">
+    <button onclick="adminLogin()">Login</button>
+    <button onclick="closeModals()">Cancel</button>
+</div>
 
 <script>
     // ==================== COMPLETE PLACES DATABASE (10+ Attractions) ====================
@@ -788,6 +794,22 @@ function saveUsers() {
 
     alert("✅ Login successful!");
 }
+function adminLogin() {
+    let pwd = document.getElementById("adminPass").value;
+
+    if (pwd === "admin123") {
+        isAdmin = true;
+        document.getElementById("adminPanel").style.display = "block";
+
+        alert("✅ Admin mode enabled");
+        closeModals();
+        showPlaces();
+    } else {
+        alert("❌ Wrong password");
+    }
+
+    document.getElementById("adminPass").value = "";
+}
     function logout() {
         currentUser = null;
         isAdmin = false;
@@ -799,16 +821,9 @@ function saveUsers() {
 
     // ==================== ADMIN FUNCTIONS ====================
     function checkAdminLogin() {
-        let pwd = prompt("🔐 Enter Admin Password:");
-        if(pwd === "admin123") {
-            isAdmin = true;
-            document.getElementById("adminPanel").style.display = "block";
-            alert("✅ Admin mode enabled - You can now add/edit/delete places");
-            showPlaces();
-        } else if(pwd !== null) {
-            alert("❌ Wrong password");
-        }
-    }
+    document.getElementById("adminModal").style.display = "block";
+    document.getElementById("modalOverlay").style.display = "block";
+}
 
     function toggleAdminPanel() {
         document.getElementById("adminPanel").style.display = "none";
@@ -1084,10 +1099,11 @@ function saveUsers() {
         document.getElementById("modalOverlay").style.display = "block"; 
     }
     function closeModals() {
-        document.getElementById("loginModal").style.display = "none";
-        document.getElementById("registerModal").style.display = "none";
-        document.getElementById("modalOverlay").style.display = "none";
-    }
+    document.getElementById("loginModal").style.display = "none";
+    document.getElementById("registerModal").style.display = "none";
+    document.getElementById("adminModal").style.display = "none";
+    document.getElementById("modalOverlay").style.display = "none";
+}
 
     // Add Admin Login button
     function addAdminButton() {
